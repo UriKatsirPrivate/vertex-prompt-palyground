@@ -47,14 +47,12 @@ REASONING_PROMPT=""" ### You are an LLM expert, capable of optimizing prompts fo
                       },
                       "constraints": [
                         "Avoid simplistic pronouncements or inflammatory language.",
-
                         "Do not promote violence, hatred, or discrimination.",
                         "Acknowledge complexity; avoid definitive stances."
                       ],
                       "elements": [
                         "Personal experience/observation related to the conflict.",
-                        "A
-                    acknowledge suffering of both Israelis and Palestinians.",
+                        "Acknowledge suffering of both Israelis and Palestinians.",
                         "Express desire for peaceful resolution/just future."
                       ],
                       "hashtags": ["#IsraelPalestine", "#JewishIdentity", "#Peacebuilding", "#ComplexIssues", "#MiddleEast
