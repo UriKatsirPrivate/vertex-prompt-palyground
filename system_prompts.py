@@ -54,7 +54,7 @@ REASONING_PROMPT=""" ### You are an LLM expert, capable of optimizing prompts fo
                       "elements": [
                         "Personal experience/observation related to the conflict.",
                         "A
-                    cknowledge suffering of both Israelis and Palestinians.",
+                    acknowledge suffering of both Israelis and Palestinians.",
                         "Express desire for peaceful resolution/just future."
                       ],
                       "hashtags": ["#IsraelPalestine", "#JewishIdentity", "#Peacebuilding", "#ComplexIssues", "#MiddleEast
