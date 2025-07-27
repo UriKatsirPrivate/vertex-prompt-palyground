@@ -64,7 +64,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7,tab8,tab9, tab10, tab11,tab12 = st.tabs
                                              "System Prompt / ",
                                              "Agent Prompt / ",
                                              "Meta Prompt / ",
-                                             "Reasoning Prompt / ",
+                                             "Json Prompt / ",
                                              "Run Prompt / ",
                                              "Zero to Few / ",
                                              "Chain of Thought / ",
@@ -558,23 +558,16 @@ with tab11:
                 else:
                     st.markdown("No images generated. Please enter a valid prompt.") 
 with tab5:
-    def zero_to_reasoning_prompt(user_input):
-        system_prompt = REASONING_PROMPT  
-
-
-
-        prompt= """the user's input is:{user_input}.
-                    Please generate the optimized prompt.
-
-                Answer:
-                """
+    def json_prompter(user_input):
         
-        formatted_prompt = prompt.format(user_input=user_input)
-
+        json_prompt = JSON_PROMPT
+        
+        formatted_prompt = json_prompt.format(user_input=user_input)
+        
         generation_config = GenerateContentConfig(temperature=temperature,
                                           top_p=top_p,
                                           max_output_tokens=max_tokens,
-                                          system_instruction=system_prompt,
+                                        #   system_instruction=system_prompt,
                                           response_modalities = ["TEXT"],
                                           safety_settings=safety_settings,
                                     )
@@ -592,16 +585,16 @@ with tab5:
         else:
             st.warning('No result to display.')    
 
-    with st.form(key='reasoning',clear_on_submit=False):
+    with st.form(key='json-prompt',clear_on_submit=False):
     #Get the prompt from the user
-        link="https://cloud.google.com/vertex-ai/generative-ai/docs/thinking"
-        desc="Write your prompt below, the service will generate a corresponding prompt for reasoning models: (See the help icon for more info)"
-        prompt = st.text_area(desc,height=200, key=55,placeholder="", help=link)
+        # link="https://cloud.google.com/vertex-ai/generative-ai/docs/thinking"
+        desc="Write your prompt below, the service will generate a corresponding Json prompt"
+        prompt = st.text_area(desc,height=200, key=55,placeholder="")
         
-        if st.form_submit_button('Reasoning Prompt',disabled=not (project_id)  or project_id=="Your Project ID"):
+        if st.form_submit_button('Json Prompt',disabled=not (project_id)  or project_id=="Your Project ID"):
             if prompt:
-                with st.spinner('Generating reasoning optimized prompt...'):
-                    execution_result = zero_to_reasoning_prompt(prompt)
+                with st.spinner('Generating Json prompt...'):
+                    execution_result = json_prompter(prompt)
                 display_result(execution_result)
             else:
                 st.warning('Please enter a prompt before executing.')                                                                   
