@@ -120,3 +120,175 @@ include at least 2 samples in the prompt
 ### Answer:
 
 """
+
+
+NANO_BANANA_PROMPT="""
+### ROLE ###
+You are Expert Prompter, an expert prompt writer.
+
+### TASK ###
+Your task is to convert the prompt provided by the user into a Json format optimized for Nano Banana.
+
+### INSTRUCTIONS / RULES ###
+- Rule 1: You must output in JSON format.
+- Rule 2: Do not answer the user's question directly.
+- Rule 3: Include at least 1 sample in the prompt
+
+### Example ###
+{{
+  "style": "hand-drawn classroom anchor chart on cream lined notebook paper; kawaii illustration; clean handwritten markers; playful doodles",
+  "canvas": {{
+    "ratio": "4:5",
+    "resolution": "1600x2000",
+    "background": "cream notebook paper with blue ruled lines and faint pink margin"
+  }},
+  "palette": {{
+    "teal": "#19897A",
+    "green": "#2E7D32",
+    "pink": "#FF4FA3",
+    "blue": "#1E63FF",
+    "purple": "#7E57C2",
+    "black": "#0B0B0B",
+    "white": "#FAFAFA"
+  }},
+  "layers": [
+    {{
+      "type": "title",
+      "text": "Emily JSON Note",
+      "marker_color": "teal",
+      "weight": "extra-bold",
+      "position": {{
+        "x": "50%",
+        "y": "8%",
+        "anchor": "center"
+      }},
+      "effects": {{
+        "wobble": 0.1,
+        "ink_bleed": 0.14
+      }}
+    }},
+    {{
+      "type": "paragraph",
+      "text": "How to organize a precise JSON prompt for image generation.",
+      "pen_color": "black",
+      "weight": "fine",
+      "position": {{
+        "x": "6%",
+        "y": "15%",
+        "width": "88%"
+      }}
+    }},
+    {{
+      "type": "subtitle",
+      "text": "Core Fields",
+      "marker_color": "green",
+      "weight": "bold",
+      "position": {{
+        "x": "6%",
+        "y": "22%"
+      }}
+    }},
+    {{
+      "type": "bullet_list",
+      "items": [
+        "State the goal in one line (model + task + style).",
+        "Define canvas (ratio, resolution, background).",
+        "Centralize colors in a palette.",
+        "Build content as ordered layers with x/y/width/height.",
+        "Describe each layer’s look: text, shapes, icons, and effects.",
+        "Add must_have_tokens and negative_prompt to control drift.",
+        "Tune rendering (handwritten_variation, marker_bleed, legibility)."
+      ],
+      "pen_color": "black",
+      "position": {{
+        "x": "6%",
+        "y": "28%",
+        "width": "54%"
+      }}
+    }},
+    {{
+      "type": "bubble_group",
+      "note": "three pink cloud bubbles with a simple fish doodle inside each; no text",
+      "shape": "cloud",
+      "count": 3,
+      "stroke_color": "pink",
+      "stroke_weight": "medium",
+      "fill": "none",
+      "icon": {{
+        "name": "fish_doodle",
+        "stroke_color": "black",
+        "fill_color": "none"
+      }},
+      "layout": {{
+        "region": {{
+          "x": "64%",
+          "y": "20%",
+          "width": "30%",
+          "height": "22%"
+        }},
+        "arrangement": "cluster"
+      }}
+    }},
+    {{
+      "type": "cat_cute",
+      "note": "kawaii black cat, no text or labels",
+      "style": "rounded head, big eyes, tiny nose, small body; sitting side view; matte fill",
+      "fill_color": "black",
+      "stroke_color": "blue",
+      "stroke_weight": "heavy",
+      "position": {{
+        "x": "20%",
+        "y": "56%",
+        "width": "60%",
+        "height": "34%"
+      }},
+      "extras": {{
+        "whiskers": true,
+        "tiny_collar": false,
+        "highlight": "soft white cheek dot"
+      }},
+      "no_text_on_cat": true
+    }},
+    {{
+      "type": "weird_eye",
+      "note": "surreal doodle eye in lower-left corner",
+      "style": "hand-drawn, concentric iris rings, a tiny star pupil, three lashes, subtle drip",
+      "stroke_color": "purple",
+      "secondary_color": "teal",
+      "position": {{
+        "x": "5%",
+        "y": "85%",
+        "width": "14%",
+        "height": "10%"
+      }}
+    }}
+  ],
+  "rendering": {{
+    "handwritten_variation": 0.22,
+    "marker_bleed": 0.16,
+    "paper_texture": 0.45,
+    "legibility_bias": 0.92,
+    "lighting": "flat overhead classroom light"
+  }},
+  "must_have_tokens": [
+    "kawaii black cat illustration with no text",
+    "three pink cloud bubbles each containing a fish doodle",
+    "surreal doodle eye in the lower-left corner",
+    "lined notebook paper background",
+    "handwritten marker style"
+  ],
+  "negative_prompt": [
+    "text inside bubbles",
+    "text on cat",
+    "photorealistic fur or shading",
+    "3D gradients, glossy effects",
+    "human hands or real photos",
+    "logos or watermarks",
+    "UI elements"
+  ]
+}}
+
+### User input: {user_input}
+
+### Answer:
+"""

@@ -62,9 +62,10 @@ tool_categories = {
     "Prompt Engineering": [
         "Fine-Tune Prompt",
         "System Prompt",
-        "Agent Prompt",
         "Meta Prompt",
         "Json Prompt",
+        "Nano Banana Json Prompt",
+        "Agent Prompt",
         "Zero to Few",
         "Chain of Thought",
         "D.A.R.E Prompting",
@@ -286,7 +287,41 @@ elif page == "Json Prompt":
                 display_result(execution_result, "json_prompt")
             else:
                 st.warning('Please enter a prompt before executing.')                                                                   
+elif page == "Nano Banana Json Prompt":
+    st.header("Nano Banana Prompt")
+    @st.cache_data
+    def banana_json_prompter(user_input, model_name, temperature, top_p, max_tokens, _safety_settings):
+        
+        json_prompt = NANO_BANANA_PROMPT
+        
+        formatted_prompt = json_prompt.format(user_input=user_input)
+        
+        config = GenerateContentConfig(temperature=temperature,
+                                          top_p=top_p,
+                                          max_output_tokens=max_tokens,
+                                          response_modalities = ["TEXT"],
+                                          safety_settings=_safety_settings,
+                                    )
 
+        response = client.models.generate_content(
+            model=model_name,
+            contents=formatted_prompt,
+            config=config,
+            )
+        return(response.text)
+
+    with st.form(key='banana-json-prompt',clear_on_submit=False):
+    #Get the prompt from the user
+        desc="Write your prompt below, the service will generate a corresponding Nano Banana Json prompt"
+        prompt = st.text_area(desc,height=200, key=55,placeholder="")
+        
+        if st.form_submit_button('Nano Banana Json Prompt',disabled=not (project_id)  or project_id=="Your Project ID"):
+            if prompt:
+                with st.spinner('Generating Json prompt...'):
+                    execution_result = banana_json_prompter(prompt, model_name, temperature, top_p, max_tokens, safety_settings)
+                display_result(execution_result, "json_prompt")
+            else:
+                st.warning('Please enter a prompt before executing.')                                                                   
 elif page == "Run Prompt":
     st.header("Run Prompt")
     @st.cache_data
@@ -537,7 +572,7 @@ elif page == "Images":
     def display_images_new(images):
         if images and images.generated_images:
             for image in images.generated_images:
-                st.image(image.image._pil_image, use_container_width="auto")
+                st.image(image.image._pil_image, width='stretch')
 
     with st.form(key='prompt_magic10',clear_on_submit=False):
         link="https://cloud.google.com/vertex-ai/docs/generative-ai/image/img-gen-prompt-guide"
