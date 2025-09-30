@@ -264,7 +264,6 @@ elif page == "Json Prompt":
         config = GenerateContentConfig(temperature=temperature,
                                           top_p=top_p,
                                           max_output_tokens=max_tokens,
-                                          response_modalities = ["TEXT"],
                                           safety_settings=_safety_settings,
                                     )
 
@@ -299,7 +298,6 @@ elif page == "Nano Banana Json Prompt":
         config = GenerateContentConfig(temperature=temperature,
                                           top_p=top_p,
                                           max_output_tokens=max_tokens,
-                                          response_modalities = ["TEXT"],
                                           safety_settings=_safety_settings,
                                     )
 
@@ -361,7 +359,6 @@ elif page == "Zero to Few":
                                           top_p=top_p,
                                           max_output_tokens=max_tokens,
                                           system_instruction=system_prompt,
-                                          response_modalities = ["TEXT"],
                                           safety_settings=_safety_settings,
                                     )
 
@@ -405,7 +402,6 @@ elif page == "Chain of Thought":
                                           top_p=top_p,
                                           max_output_tokens=max_tokens,
                                           system_instruction=system_prompt,
-                                          response_modalities = ["TEXT"],
                                           safety_settings=_safety_settings,
                                     )
 
@@ -461,7 +457,6 @@ elif page == "D.A.R.E Prompting":
                                           top_p=top_p,
                                           max_output_tokens=max_tokens,
                                           system_instruction=system_prompt,
-                                          response_modalities = ["TEXT"],
                                           safety_settings=_safety_settings,
                                     )
         response = client.models.generate_content(
@@ -541,7 +536,6 @@ elif page == "Images":
                                           top_p=top_p,
                                           max_output_tokens=max_tokens,
                                           system_instruction=system_prompt,
-                                          response_modalities = ["TEXT"],
                                           safety_settings=_safety_settings,
                                     )
 
