@@ -27,7 +27,8 @@ st.set_page_config(
     }
 )
 
-# REGIONS=["us-central1"]
+st.warning("Starting November 2025, this service will migrate to https://myprompt.online/")
+
 REGIONS=["global"]
 MODEL_NAMES=['gemini-2.5-flash','gemini-2.5-pro']
 

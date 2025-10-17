@@ -2,7 +2,7 @@
  
 Powered by Vertex AI Gemini models & Streamlit. Hosted on Cloud Run.
 
-### See the code in action [here](https://thepromptplayground.xyz/).
+### See the code in action [here](https://myprompt.online/).
 
 ### Usage
 * In app.py, modify get_project_id function to return your project ID.
