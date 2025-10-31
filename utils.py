@@ -63,8 +63,9 @@ def generate_llm_content(_client, project_id, region, model_name, contents, _gen
 
 def display_result(execution_result, key_suffix):
     """Displays the execution result in a text area."""
+    # The key_suffix is no longer needed but kept for compatibility with existing calls.
     if execution_result:
-        st.text_area(label="Execution Result:", value=execution_result, height=400, key=f"result_{key_suffix}")
+        st.code(execution_result, language=None)
     else:
         st.warning('No result to display.')
 

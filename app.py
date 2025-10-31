@@ -117,17 +117,16 @@ if page == "Fine-Tune Prompt":
                     col1, col2= st.columns(2,gap="medium")
                     with col1:
                         execution_result = create_make_prompt(client, project_id, region, model_name, generation_config, 1, prompt)
-                        st.text_area(label="Prompt-1:",value=execution_result,height=400, key=101)
+                        st.code(execution_result, language=None)
 
                         execution_result = create_make_prompt(client, project_id, region, model_name, generation_config, 2, prompt)
-                        st.text_area(label="Prompt-2:",value=execution_result,height=400, key=102)
+                        st.code(execution_result, language=None)
                     
                     with col2:
                       execution_result = create_refine_prompt(client, project_id, region, model_name, generation_config, prompt)
-                      st.text_area(label="Prompt-3:",value=execution_result,height=400, key=103)
-
+                      st.code(execution_result, language=None)
                       execution_result = create_improved_prompt(client, project_id, region, model_name, generation_config, prompt)
-                      st.text_area(label="Prompt-4:",value=execution_result,height=400, key=104)
+                      st.code(execution_result, language=None)
             else:
                 st.warning('Please enter a prompt before executing.')
 
@@ -268,7 +267,7 @@ elif page == "D.A.R.E Prompting":
             if prompt:
                 with st.spinner('working on it...'):
                     dare_result = dare_it(client, project_id, region, model_name, generation_config, prompt, vision, mission, context)
-                st.text_area('Result', dare_result, height=250, max_chars=None, key=None)
+                st.code(dare_result, language=None)
             else:
                 st.markdown("Please enter a prompt.")   
     help_me=st.checkbox("Help Me Create D.A.R.E Artifacts")
@@ -281,7 +280,7 @@ elif page == "D.A.R.E Prompting":
                     if user_input:
                             with st.spinner('working on it...'):
                                 dare_artifacts_result = create_dare_artifacts(client, project_id, region, model_name, temperature, top_p, max_tokens, safety_settings, user_input)
-                            st.text_area('D.A.R.E Artifacts', dare_artifacts_result, height=250, max_chars=None, key=None)
+                            st.code(dare_artifacts_result, language=None)
                     else:
                         st.markdown("Please enter a prompt.")
 
@@ -299,7 +298,7 @@ elif page == "Compress Prompt":
                     
             # Display the trimmed prompt
             if prompt is not None and len(str(trimmed_text)) > 0:
-                st.text_area(label="Compressed Prompt",value=trimmed_text, height=250, max_chars=None, key=None)
+                st.code(trimmed_text, language=None)
                 st.text("Original Prompt Length: " + str(len(prompt)))
                 st.text("Compressed Prompt Length: " + str(len(trimmed_text)))
                 st.text("Reduction %: " + "%.2f" % ((len(prompt) - len(trimmed_text)) / len(prompt) * 100))
