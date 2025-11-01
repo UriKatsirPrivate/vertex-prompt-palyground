@@ -309,7 +309,7 @@ elif page == "Images":
     st.header("Images")
     with st.form(key='prompt_magic10',clear_on_submit=False):
         link="https://cloud.google.com/vertex-ai/docs/generative-ai/image/img-gen-prompt-guide"
-        desc="Write your prompt below, See help icon for a prompt guide: (Images will be generated using the Imagen3 model)"
+        desc="Write your prompt below, See help icon for a prompt guide: (Images will be generated using Imagen4)"
         description = st.text_area(desc,height=200,key=110,placeholder=GENERATE_IMAGES,help=link)
                 
         col1, col2 = st.columns(2,gap="large")

@@ -167,7 +167,7 @@ def GenerateImageNew(_client, description, num_of_images):
     try:
         images = _client.models.generate_images(
             prompt=description,
-            model="imagen-3.0-generate-002", # Using a specific model for image generation
+            model="imagen-4.0-fast-generate-001", # Using a specific model for image generation
             config=types.GenerateImagesConfig(
                 number_of_images=num_of_images,
                 output_mime_type='image/jpeg',
@@ -187,6 +187,6 @@ def display_images_new(images):
         cols = st.columns(len(images.generated_images))
         for i, image in enumerate(images.generated_images):
             with cols[i]:
-                st.image(image.image._pil_image, use_container_width=True)
+                st.image(image.image._pil_image, width='stretch')
     else:
         st.warning("No images were generated. This could be due to a safety policy violation or an API error.")
