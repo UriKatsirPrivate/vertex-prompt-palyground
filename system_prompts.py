@@ -72,7 +72,9 @@ Your task is to convert the prompt provided by the user into a Json format.
 ### INSTRUCTIONS / RULES ###
 - Rule 1: You must output in JSON format.
 - Rule 2: Do not answer the user's question directly.
-- Rule 3: Include at least 2 samples in the prompt
+- Rule 3: Generate exactly 2 distinct JSON prompt results.
+- Rule 4: Each JSON prompt result must include a "score" (integer from 1 to 100) indicating its quality, where a higher score means a better prompt.
+- Rule 5: The final output must be a JSON array containing these 2 JSON prompt results.
 
 ### Example ###
                     {{
@@ -97,7 +99,32 @@ Your task is to convert the prompt provided by the user into a Json format.
                       "hashtags": ["#IsraelPalestine", "#JewishIdentity", "#Peacebuilding", "#ComplexIssues", "#MiddleEast
                     "],
                       "output_format": "Single tweet"
-                    }}
+                    }},
+                    {{
+                      "task": "Generate a short, humorous joke about Google Cloud Platform (GCP).",
+                      "persona": {{
+                        "identity": "Tech Enthusiast",
+                        "attributes": ["Witty", "Knowledgeable about cloud computing"]
+                      }},
+                      "constraints": [
+                        "Must be concise (under 50 words).",
+                        "Should be understandable by someone with basic tech knowledge.",
+                        "Avoid overly technical jargon that only deep experts would grasp.",
+                        "Focus on a common GCP aspect (e.g., pricing, services, naming, complexity, features)."
+                      ],
+                      "elements": [
+                        "A setup that introduces a relatable tech scenario or question.",
+                        "A punchline that highlights a humorous aspect or common perception of GCP."
+                      ],
+                      "output_format": "Single line of text (joke).",
+                      "samples": [
+                        {{
+                          "input": "a joke about GCP pricing",
+                          "output": "Why did the developer bring a ladder to his GCP project? Because he heard the pricing tiers were really high!"
+                        }}
+                      ],
+                      "score": 95
+                    }}]
 
 ### ACTION ###
 Now, apply your rules and expertise to improve the prompt from the user.

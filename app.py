@@ -28,7 +28,8 @@ from utils import (
     metaprompt,
 )
 from google.genai.types import (GenerateContentConfig,)
-
+from toon import encode
+import json
 
 # https://docs.streamlit.io/library/api-reference/utilities/st.set_page_config
 st.set_page_config(
@@ -42,7 +43,7 @@ st.set_page_config(
     }
 )
 
-st.warning("Starting November 2025, this service will migrate to https://myprompt.online/")
+# st.warning("Starting November 2025, this service will migrate to https://myprompt.online/")
 
 project_id=get_project_id()
 # st.sidebar.write("Project ID: ",f"{project_id}")
@@ -66,6 +67,7 @@ tool_categories = {
         "System Prompt",
         "Json Prompt",
         "Nano Banana Json Prompt",
+        "Toon Prompt",
         "Images",
         "Veo Prompt",
         "Run Prompt",
@@ -104,6 +106,12 @@ generation_config = GenerateContentConfig(
     max_output_tokens=max_tokens,
     safety_settings=safety_settings,
 )
+
+def clean_json_string(json_string):
+    """Removes markdown code block formatting from a JSON string."""
+    if json_string.startswith("```json"):
+        json_string = json_string[7:]
+    return json_string.strip().strip('`')
 
 if page == "Fine-Tune Prompt":
     st.header("Fine-Tune Prompt")
@@ -188,10 +196,70 @@ elif page == "Json Prompt":
         if st.form_submit_button('Json Prompt',disabled=not (project_id)  or project_id=="Your Project ID"):
             if prompt:
                 with st.spinner('Generating Json prompt...'):
-                    execution_result = json_prompter(client, project_id, region, model_name, generation_config, prompt)
-                display_result(execution_result, "json_prompt")
+                    json_response = json_prompter(client, project_id, region, model_name, generation_config, prompt)
+                    cleaned_response_text = clean_json_string(json_response.text)
+                    try:
+                        json_results = json.loads(cleaned_response_text)
+                        if isinstance(json_results, list) and all("score" in res for res in json_results):
+                            best_result = max(json_results, key=lambda x: x.get("score", 0))
+                            best_result.pop("score", None) # Remove score before displaying
+                            st.code(json.dumps(best_result, indent=2), language='json') 
+                        else:
+                            st.code(cleaned_response_text, language='json') # Fallback if not an array of scored results
+                    except json.JSONDecodeError:
+                        st.error("Failed to parse JSON response. Displaying raw output.")
+                        st.code(cleaned_response_text, language='json')
             else:
-                st.warning('Please enter a prompt before executing.')                                                                   
+                st.warning('Please enter a prompt before executing.')       
+elif page == "Toon Prompt":
+    st.header("Toon")
+    with st.form(key='toon_form', clear_on_submit=False):
+        link="https://github.com/xaviviro/python-toon"
+        desc="Write your prompt below, service will enhance the prompt and return it in TOON format: (See the help icon for more info)"
+        description = st.text_area(desc,height=200,key=201,placeholder="",help=link)
+        generate_button = st.form_submit_button('Generate', disabled=not (project_id) or project_id=="Your Project ID")
+    
+        if description:
+            if generate_button:
+                with st.spinner('Generating JSON Prompt and Toon...'):
+                    json_response = json_prompter(client, project_id, region, model_name, generation_config, description) 
+                    cleaned_response_text = clean_json_string(json_response.text)
+                    try:
+                        json_results = json.loads(cleaned_response_text)
+                        if isinstance(json_results, list) and all("score" in res for res in json_results):
+                            best_json_data = max(json_results, key=lambda x: x.get("score", 0))
+                        else:
+                            best_json_data = json_results # Fallback if not an array of scored results
+                    except json.JSONDecodeError:
+                        st.error("Failed to parse JSON response for Toon. Using raw output if possible.")
+                        best_json_data = {} # Or handle error more gracefully
+                    
+                    json_data_for_encoding = best_json_data.copy() # Create a copy for encoding
+                    json_data_for_encoding.pop("score", None) # Remove score before encoding
+                    t_prompt = encode(json_data_for_encoding)
+                    
+                    # Calculate token count for the *displayed* JSON
+                    # json_token_count = client.models.count_tokens(model=f"projects/{project_id}/locations/{region}/publishers/google/models/{model_name}", contents=json.dumps(best_json_data)).total_tokens
+                    # toon_token_count = client.models.count_tokens(model=f"projects/{project_id}/locations/{region}/publishers/google/models/{model_name}", contents=t_prompt).total_tokens
+
+                    col_json, col_toon = st.columns(2, gap="large")
+                    with col_json:
+                        st.subheader("JSON Prompt")
+                        # st.info(f"Token Count: {json_token_count}")
+                        best_json_data.pop("score", None) # Remove score before displaying
+                        st.code(json.dumps(best_json_data, indent=2), language='json')
+                    
+                    with col_toon:
+                        st.subheader("Toon Result")
+                        # st.info(f"Token Count: {toon_token_count}")
+
+                        if t_prompt:
+                            st.code(t_prompt, language=None)
+                        else:
+                            st.warning("No Toon result generated. The prompt may have been blocked by safety filters.")
+
+        elif generate_button:
+            st.warning("Please enter a prompt before generating.")
 elif page == "Nano Banana Json Prompt":
     st.header("Nano Banana Prompt")
     with st.form(key='banana-json-prompt',clear_on_submit=False):
@@ -216,8 +284,9 @@ elif page == "Run Prompt":
         if st.form_submit_button('Run Prompt',disabled=not (project_id)  or project_id=="Your Project ID"):
             if prompt:
                 with st.spinner('Running prompt...'):
-                    execution_result = run_prompt(client, project_id, region, model_name, generation_config, prompt)
-                display_result(execution_result, "run_prompt")
+                    response = run_prompt(client, project_id, region, model_name, generation_config, prompt)
+                    cleaned_result = clean_json_string(response.text)
+                st.code(cleaned_result, language='json')
             else:
                 st.warning('Please enter a prompt before executing.')                
 
@@ -338,7 +407,6 @@ elif page == "Images":
                            st.markdown("No images generated. The prompt may have been blocked by safety filters.")
                 else:
                     st.markdown("No images generated. Please enter a valid prompt.")
-
 elif page == "Veo Prompt":
     st.header("Veo Prompt")
     with st.form(key='video-prompt',clear_on_submit=False):
