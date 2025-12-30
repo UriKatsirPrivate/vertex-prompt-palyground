@@ -1,5 +1,5 @@
-google-genai==1.51.0
+google-genai==1.56.0
 watchdog==6.0.0
-streamlit==1.51.0
+streamlit==1.52.2
 gptrim==0.1.6
 python-toon==0.1.3
