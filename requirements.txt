@@ -1,4 +1,4 @@
-google-genai==1.64.0
+google-genai==1.65.0
 watchdog==6.0.0
 streamlit==1.54.0
 gptrim==0.1.6
