@@ -24,7 +24,7 @@ from video_prompt import video_prompt
 from google import genai
 
 REGIONS=["global"]
-MODEL_NAMES=['gemini-3.1-flash-lite','gemini-3-flash-preview','gemini-3.1-pro-preview']
+MODEL_NAMES=['gemini-3.1-flash-lite','gemini-3.5-flash','gemini-3.1-pro-preview']
 
 def get_project_id():
     # Use st.secrets for better security
