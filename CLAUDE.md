@@ -4,82 +4,90 @@ Guidance for Claude Code when working in this repository.
 
 ## What this is
 
-**The Prompt Playground** — a Streamlit web app exposing a suite of prompt-engineering
-tools backed by Google Vertex AI (Gemini for text, Imagen for images). Deployed to
-Google Cloud Run; live at https://myprompt.online/.
+**The Prompt Playground** — a web app exposing a suite of prompt-engineering tools
+backed by Google Vertex AI (Gemini for text, Imagen for images). A Next.js SPA frontend
+talks to a FastAPI backend; both ship in one container on Google Cloud Run.
+
+> History: this was originally a single-file Streamlit app. It was rewritten to
+> Next.js + FastAPI (see `DEVELOPMENT.md`). The last Streamlit commit is tagged
+> `streamlit-final` for rollback.
 
 ## Tech stack
 
-- **Language:** Python 3.12 (Dockerfile pins `python:3.12`)
-- **Framework:** Streamlit 1.57 (UI + orchestration)
-- **AI/ML:** Google Vertex AI via the `google-genai` SDK (Gemini, Imagen)
-- **Utilities:** `gptrim` (prompt compression), `python-toon` (TOON encoding)
-- **Deploy:** Docker → Cloud Build → Cloud Run
+- **Frontend:** Next.js 16 (App Router) · React 19 · Tailwind v4 · shadcn-ui
+  (which uses **Base UI**, not Radix) · Zustand · next-themes. Built as a **static
+  export** (`output: "export"`).
+- **Backend:** FastAPI · `google-genai` SDK (Vertex AI) · `gptrim` · `python-toon` ·
+  Pydantic v2 / pydantic-settings. Python 3.12.
+- **Deploy:** multi-stage `Dockerfile` → Cloud Build → single Cloud Run service.
 
-## Architecture
+## Layout
 
-Modular, single-page Streamlit app. Data flows: `app.py` (UI) → `utils.py` (service
-layer) → `*_prompt.py` (prompt templates) → Vertex AI.
-
-- **`app.py`** — entry point and the entire UI. A sidebar selectbox chooses a tool;
-  a large `if/elif page == ...` block renders each tool's form and calls the matching
-  `utils.py` function. Also builds the per-run `GenerateContentConfig` from the
-  temperature/top-p/max-tokens sliders.
-- **`utils.py`** — functional backbone. Holds `MODEL_NAMES`/`REGIONS`, client init,
-  the generic `generate_llm_content(...)` wrapper, and one thin `@st.cache_data`
-  function per tool that formats a template and calls the LLM.
-- **`initialization.py`** — `safety_settings` (Vertex harm-category thresholds) and a
-  legacy `initialize_llm_vertex(...)` helper.
-- **`*_prompt.py` / `system_prompts.py` / `placeholders.py`** — prompt template library.
-  Each technique's template lives in its own module (e.g. `dare_prompts.py`,
-  `meta_prompt.py`, `agent_prompt.py`, `fine_tune_prompt.py`, `image_prompts.py`,
-  `video_prompt.py`). `system_prompts.py` holds `SYSTEM_PROMPT`, `JSON_PROMPT`,
-  `NANO_BANANA_PROMPT`; `placeholders.py` holds UI placeholder text.
-- **`icons/`** — static assets (Vertex AI logo).
+```
+backend/app/
+  main.py            # FastAPI app: /api router + serves the SPA from ./static
+  config.py          # Settings (env prefix PG_); safety in core/safety.py
+  deps.py            # build_context() -> ToolContext
+  core/
+    client.py        # cached genai.Client (lru_cache, replaces st.cache_resource)
+    generation.py    # generate_text(); typed errors (errors.py), no st.*
+    tools/__init__.py# TOOL_REGISTRY: id -> ToolSpec (the registry IS the API surface)
+    tools/{text_tools,json_tools,dare,images,compress}.py
+    prompts/         # prompt templates (system_prompts, *_prompt, placeholders)
+  api/{routes_tools,routes_config,schemas}.py
+frontend/
+  app/(tools)/[toolId]/page.tsx   # generic tool page (static-generated per id)
+  app/(tools)/{dare,images}/page.tsx  # the 2 bespoke tools
+  components/  lib/{api,types,history,tools}.ts  store/config-store.ts
+```
 
 ## Key conventions
 
-- **Prompt templates stay in dedicated `*_prompt.py` modules** — never inline large
-  templates in `app.py` or `utils.py`. They're `.format(...)`-ed in `utils.py`.
-- **Caching:** `@st.cache_resource` for the GenAI client (`get_llm_client`),
-  `@st.cache_data` for every LLM-calling function. Cached-function args prefixed with
-  `_` (e.g. `_client`, `_generation_config`) are excluded from Streamlit's cache key —
-  preserve that prefix when the arg is unhashable.
-- **Model path format:** Vertex calls use the full resource path
-  `projects/{project_id}/locations/{region}/publishers/google/models/{model_name}`.
-- **Adding a new technique:** create a `*_prompt.py` template → add a cached wrapper in
-  `utils.py` → export it and add an `elif page == "..."` branch + sidebar entry in `app.py`.
-- **Region** is fixed to `global` (`REGIONS = ["global"]`); project id resolves from
-  `st.secrets["GCP_PROJECT_ID"]`, falling back to `landing-zone-demo-341118`.
+- **One generic path for most tools.** 12 of 14 tools are "text/JSON in → blocks out",
+  served by `POST /api/tools/{id}` and rendered by `GenericToolForm`. Only **D.A.R.E**
+  (multi-field) and **Images** (binary) have dedicated endpoints + pages.
+- **Adding a tool:** add a handler + `ToolSpec` to `backend/app/core/tools/` (registry),
+  then add its id to `frontend/lib/tools.ts:GENERIC_TOOL_IDS` (static export must
+  enumerate dynamic routes) and rebuild. Nav/forms come from `/api/config` automatically.
+- **No Streamlit, no `st.*` in the backend.** Logic lives in `core/`; errors are raised
+  as typed `PlaygroundError`s and mapped to HTTP in `main.py`.
+- **Model path:** `projects/{project}/locations/{region}/publishers/google/models/{model}`.
+- **Config via env (prefix `PG_`):** `PG_GCP_PROJECT_ID`, `PG_GCP_REGION` (default
+  `global`), `PG_DEFAULT_MODEL`, `PG_MODEL_NAMES`, `PG_IMAGEN_MODEL`, `PG_CORS_ORIGINS`.
+- **Model config** (model + temp/top-p/max-tokens) is client state (Zustand, persisted)
+  sent with every request as `modelConfig`; no server session state, no server LLM cache
+  (frontend localStorage history replaces the old `@st.cache_data`).
+- **shadcn here is Base UI:** compose with the `render` prop, not `asChild`.
 
-## Tools (sidebar pages)
+## Tools
 
-Fine-Tune Prompt · System Prompt · Json Prompt · Nano Banana Json Prompt · Toon Prompt ·
-Images (Imagen) · Veo Prompt · Run Prompt · Meta Prompt · Agent Prompt · Zero to Few ·
-Chain of Thought · D.A.R.E Prompting · Compress Prompt.
+Fine-Tune · System · Agent · Meta · Zero-to-Few · Chain-of-Thought · Json · Toon ·
+Nano Banana · Veo · Run · Compress (generic) + D.A.R.E · Images (bespoke).
 
-## Setup & run
+## Run & deploy
+
+See **`DEVELOPMENT.md`** for the full local two-process setup and the prod single-
+container build. Quick version:
 
 ```bash
-pip install -r requirements.txt
-# create .streamlit/secrets.toml with: GCP_PROJECT_ID = "your-project-id"
-gcloud auth application-default login
-streamlit run app.py
+# backend
+cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/uvicorn app.main:app --reload --port 8000
+# frontend
+cd frontend && npm install && npm run dev      # :3000 -> :8000 via .env.local
+
+# tests
+cd backend && .venv/bin/python -m pytest tests/ -q
+cd frontend && npm run lint && npm run build
 ```
 
-Helper scripts: `run-venv.sh` (venv launch), `run-claude.sh` / `run.sh` (start Claude
-Code against Vertex AI — `run.sh` also runs `setup-data-sharing.sh` to enable Anthropic
-data sharing, a prerequisite for gated models like Fable 5).
-
-## Deploy
-
-`./deploy.sh` — builds via Cloud Build and deploys to Cloud Run (project, region
-`me-west1`, service `vertex-prompt-playground`). The runtime service account needs the
-**Vertex AI User** role.
+Deploy: `./deploy.sh` (Cloud Build via `cloudbuild.yaml` + `Dockerfile`, deploys to
+Cloud Run; SA needs **Vertex AI User**). gptrim needs NLTK corpora (the Dockerfile
+downloads `stopwords`/`punkt`/`punkt_tab`); `pyOpenSSL` is required for google-auth.
 
 ## Notes
 
-- Models live in `utils.py:MODEL_NAMES`; update there when Gemini versions change.
-- Image generation uses `imagen-4.0-fast-generate-001` (hardcoded in
-  `utils.py:GenerateImageNew`).
-- `GEMINI.md` is being removed in favor of this file.
+- Imagen model is `imagen-4.0-fast-generate-001` (`PG_IMAGEN_MODEL` /
+  `core/tools/images.py`).
+- `analysis_and_enhancement.py` at the repo root is an unused leftover prompt template
+  (not imported anywhere) — safe to delete.

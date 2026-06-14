@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+
+# build artifact: Next.js static export copied in at deploy time
+static/

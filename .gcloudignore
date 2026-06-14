@@ -1,0 +1,14 @@
+# Keep the Cloud Build source upload small. The image is built from source via
+# Dockerfile.web; heavy/local-only dirs are excluded here.
+.git
+**/node_modules
+**/.next
+frontend/out
+backend/.venv
+backend/static
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.env
+**/.env.local
+.claude

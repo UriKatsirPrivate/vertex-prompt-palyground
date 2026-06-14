@@ -1,56 +1,61 @@
 # The Prompt Playground
 
-A comprehensive service designed as a playground for various prompt engineering techniques, powered by Google's Vertex AI Gemini models and hosted on Google Cloud Run.
+A playground for prompt-engineering techniques, powered by Google Vertex AI (Gemini for
+text, Imagen for images). A **Next.js** single-page app talks to a **FastAPI** backend;
+both ship in one container on **Google Cloud Run**.
 
-### ✨ [See the code in action here](https://myprompt.online/) ✨
-
----
+> Originally a Streamlit app; rewritten to Next.js + FastAPI. The last Streamlit commit
+> is tagged `streamlit-final`.
 
 ## Features
 
-- **Prompt Engineering Tools:** A wide array of tools for fine-tuning, creating system prompts, agent prompts, meta prompts, and more.
-- **Advanced Techniques:** Explore techniques like Zero-to-Few-Shot, Chain of Thought, and D.A.R.E. prompting.
-- **Format Generation:** Specialized tools for generating JSON, Nano Banana JSON, and Veo prompts.
-- **Image Generation:** Integrated with Imagen3 to generate images from text descriptions.
-- **Real-time Configuration:** Interactively adjust model parameters like temperature, top-p, and token limits.
+- **Prompt-engineering tools:** fine-tune, system, agent, and meta prompts, and more.
+- **Advanced techniques:** Zero-to-Few-Shot, Chain of Thought, D.A.R.E prompting.
+- **Format generation:** JSON, Nano Banana JSON, TOON, and Veo prompts.
+- **Image generation:** Imagen 4 from text descriptions.
+- **Prompt compression** and per-tool **run history** (stored in your browser).
+- **Live model config:** model, temperature, top-p, and token limits.
+
+## Stack
+
+- **Frontend:** Next.js 16 (App Router) · React 19 · Tailwind v4 · shadcn-ui · Zustand
+  (static export)
+- **Backend:** FastAPI · `google-genai` (Vertex AI) · `gptrim` · `python-toon`
+- **Deploy:** multi-stage Docker → Cloud Build → single Cloud Run service
 
 ## Prerequisites
 
-Before you begin, ensure you have the following:
-- A Google Cloud Project.
-- The Vertex AI API enabled in your Google Cloud project.
-- `gcloud` CLI installed and authenticated.
+- A Google Cloud project with the Vertex AI API enabled.
+- `gcloud` CLI installed and authenticated (`gcloud auth application-default login`).
+- Node 20+ and Python 3.12 for local development.
 
-## 🚀 Setup and Deployment
+## Run locally
 
-### 1. Configure Your Project ID
-For security, this application is designed to use Streamlit's secrets management.
+See **[DEVELOPMENT.md](./DEVELOPMENT.md)** for the full guide. Quick version (two processes):
 
-1.  Create a secrets file: `.streamlit/secrets.toml`
-2.  Add your Google Cloud Project ID to the file:
-    ```toml
-    GCP_PROJECT_ID = "your-gcp-project-id"
-    ```
+```bash
+# Backend  -> http://localhost:8000
+cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/uvicorn app.main:app --reload --port 8000
 
-### 2. Deploy to Cloud Run
-The `deploy.sh` script is configured to deploy the application to Google Cloud Run.
+# Frontend -> http://localhost:3000
+cd frontend && npm install && npm run dev
+```
 
-1.  **Modify `deploy.sh`:** Update the configuration variables at the top of the script with your project-specific values (e.g., `PROJECT_ID`, `SERVICE_NAME`, `REGION`).
-2.  **Service Account Permissions:** Ensure the service account you use for the Cloud Run service has the following IAM roles:
-    - `Vertex AI User`: To allow access to Gemini models.
-    - `Cloud Run Invoker`: To allow public access to the service if desired.
-3.  **Execute the script:**
-    ```bash
-    ./deploy.sh
-    ```
+## Deploy
 
-## Usage
+```bash
+./deploy.sh
+```
 
-Once deployed, navigate to the provided Cloud Run URL. Use the sidebar to select a tool and configure the model parameters. Enter your prompt and see the results.
+Builds the combined image via Cloud Build (`cloudbuild.yaml` + `Dockerfile`) and deploys
+to Cloud Run. Configure the project/region/service variables at the top of `deploy.sh`.
+The Cloud Run service account needs the **Vertex AI User** role. Runtime config is via
+`PG_*` env vars (e.g. `PG_GCP_PROJECT_ID`, `PG_DEFAULT_MODEL`).
 
-## 🛠️ Technology Stack
+## Architecture
 
-- **Backend:** Python
-- **Framework:** Streamlit
-- **AI/ML:** Google Vertex AI (Gemini, Imagen)
-- **Deployment:** Google Cloud Run, Docker
+`Next.js SPA → /api/* (FastAPI) → core/ → Vertex AI`. The frontend reads `/api/config`
+at runtime to build its grouped navigation and forms. Twelve of the fourteen tools are
+served by one generic endpoint + form; D.A.R.E and Images are bespoke. See `CLAUDE.md`
+for conventions.
