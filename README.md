@@ -4,9 +4,6 @@ A playground for prompt-engineering techniques, powered by Google Vertex AI (Gem
 text, Imagen for images). A **Next.js** single-page app talks to a **FastAPI** backend;
 both ship in one container on **Google Cloud Run**.
 
-> Originally a Streamlit app; rewritten to Next.js + FastAPI. The last Streamlit commit
-> is tagged `streamlit-final`.
-
 ## Features
 
 - **Prompt-engineering tools:** fine-tune, system, agent, and meta prompts, and more.
