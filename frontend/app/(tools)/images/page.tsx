@@ -64,7 +64,7 @@ export default function ImagesPage() {
         <p className="text-muted-foreground mt-1 text-sm">
           Generate Imagen prompts, then render images.{" "}
           <a
-            href="https://cloud.google.com/vertex-ai/docs/generative-ai/image/img-gen-prompt-guide"
+            href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/gemini-image-generation-best-practices"
             target="_blank"
             rel="noopener noreferrer"
             className="underline"

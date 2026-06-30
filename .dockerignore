@@ -1,0 +1,29 @@
+# Build-context excludes for the combined Next.js + FastAPI image.
+#
+# IMPORTANT: Docker only honors the .dockerignore at the build-context root
+# (the repo root, since deploy.sh / cloudbuild.yaml build with context "."). The
+# per-package backend/.dockerignore and frontend/.dockerignore are NOT applied
+# here. This file is what keeps dev-only files out of the production image —
+# most critically frontend/.env.local, whose NEXT_PUBLIC_API_BASE_URL would
+# otherwise be baked into the static export and point the prod UI at localhost.
+
+.git
+.gitignore
+
+# Node / Next.js
+**/node_modules
+**/.next
+**/out
+
+# Critical: never bake the dev API base URL into the static export.
+**/.env.local
+**/.env.*.local
+
+# Python
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+
+# Tooling / test artifacts
+.playwright-mcp

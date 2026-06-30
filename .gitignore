@@ -1,3 +1,6 @@
+# Playwright MCP session output (snapshots, console logs, screenshots)
+.playwright-mcp/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
