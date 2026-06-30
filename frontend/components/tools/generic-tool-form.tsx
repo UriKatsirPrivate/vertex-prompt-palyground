@@ -8,11 +8,12 @@ import { ErrorState } from "@/components/tools/error-state";
 import { HistoryDrawer } from "@/components/history/history-drawer";
 import { LoadingState } from "@/components/tools/loading-state";
 import { ResultList } from "@/components/tools/result-list";
+import { StreamingResultGrid } from "@/components/tools/streaming-result-grid";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ApiError, callTool } from "@/lib/api";
+import { ApiError, callTool, streamTool } from "@/lib/api";
 import { addHistory, type HistoryEntry } from "@/lib/history";
-import type { ResultBlock, ToolMeta } from "@/lib/types";
+import type { ModelConfig, ResultBlock, ToolMeta } from "@/lib/types";
 import { useConfigStore } from "@/store/config-store";
 
 export function GenericToolForm({ tool }: { tool: ToolMeta }) {
@@ -21,6 +22,9 @@ export function GenericToolForm({ tool }: { tool: ToolMeta }) {
   const [meta, setMeta] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  // Streaming state for multi-result tools: each slot fills as its block lands.
+  const [streamSlots, setStreamSlots] = useState<(ResultBlock | null)[] | null>(null);
+  const [streamErrors, setStreamErrors] = useState<(string | null)[]>([]);
   const asModelConfig = useConfigStore((s) => s.asModelConfig);
   const resultCount = tool.multi_result ? 4 : 1;
 
@@ -31,7 +35,15 @@ export function GenericToolForm({ tool }: { tool: ToolMeta }) {
     setError(null);
     setBlocks(null);
     setMeta(null);
+    setStreamSlots(null);
+    setStreamErrors([]);
     const modelConfig = asModelConfig();
+
+    if (tool.multi_result) {
+      await submitStreaming(modelConfig);
+      return;
+    }
+
     try {
       const res = await callTool(tool.id, input, modelConfig);
       setBlocks(res.blocks);
@@ -45,11 +57,44 @@ export function GenericToolForm({ tool }: { tool: ToolMeta }) {
     }
   }
 
+  async function submitStreaming(modelConfig: ModelConfig) {
+    const slots: (ResultBlock | null)[] = Array(resultCount).fill(null);
+    const errs: (string | null)[] = Array(resultCount).fill(null);
+    setStreamSlots([...slots]);
+    setStreamErrors([...errs]);
+    try {
+      await streamTool(tool.id, input, modelConfig, {
+        onBlock: (b) => {
+          slots[b.index] = { content: b.content, title: b.title, language: b.language };
+          setStreamSlots([...slots]);
+        },
+        onError: (e) => {
+          errs[e.index] = e.error;
+          setStreamErrors([...errs]);
+        },
+      });
+      const collected = slots.filter((s): s is ResultBlock => s != null);
+      if (collected.length > 0) {
+        setBlocks(collected);
+        addHistory(tool.id, { input, blocks: collected, modelConfig });
+      } else {
+        toast.error(errs.find((x) => x != null) ?? "Request failed");
+      }
+    } catch (err) {
+      setError(err);
+      toast.error(err instanceof ApiError ? err.message : "Request failed");
+    } finally {
+      setStreamSlots(null);
+      setLoading(false);
+    }
+  }
+
   function restore(entry: HistoryEntry) {
     setInput(entry.input);
     setBlocks(entry.blocks);
     setError(null);
     setMeta(null);
+    setStreamSlots(null);
   }
 
   return (
@@ -82,9 +127,19 @@ export function GenericToolForm({ tool }: { tool: ToolMeta }) {
         </div>
       </form>
 
-      {loading && <LoadingState count={resultCount} />}
-      {!loading && error != null && <ErrorState error={error} />}
-      {!loading && blocks && <ResultList blocks={blocks} />}
+      {streamSlots ? (
+        <StreamingResultGrid
+          slots={streamSlots}
+          errors={streamErrors}
+          count={resultCount}
+        />
+      ) : loading ? (
+        <LoadingState count={resultCount} />
+      ) : error != null ? (
+        <ErrorState error={error} />
+      ) : blocks ? (
+        <ResultList blocks={blocks} />
+      ) : null}
 
       {!loading && meta && tool.output_kind === "stats" && (
         <div className="text-muted-foreground flex flex-wrap gap-4 text-sm">

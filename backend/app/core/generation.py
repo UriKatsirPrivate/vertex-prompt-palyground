@@ -32,6 +32,31 @@ def _model_path(project_id: str, region: str, model_name: str) -> str:
     )
 
 
+def _build_call(
+    params: GenerationParams, contents: str, system_instruction: str | None
+) -> tuple[GenerateContentConfig, list[types.Part]]:
+    """Shared request assembly for the sync and async generation paths."""
+    config = GenerateContentConfig(
+        temperature=params.temperature,
+        top_p=params.top_p,
+        max_output_tokens=params.max_tokens,
+        safety_settings=safety_settings,
+    )
+    parts: list[types.Part] = []
+    if system_instruction:
+        parts.append(types.Part(text=system_instruction))
+    parts.append(types.Part(text=contents))
+    return config, parts
+
+
+def _require_text(text: str | None) -> str:
+    if not text:
+        raise SafetyBlockedError(
+            "The model returned no content. It may have been blocked by safety filters."
+        )
+    return text
+
+
 def generate_text(
     client: genai.Client,
     *,
@@ -46,18 +71,7 @@ def generate_text(
     Raises ``UpstreamError`` on API failure and ``SafetyBlockedError`` when the
     model returns no text (the usual signature of a safety-filtered response).
     """
-    config = GenerateContentConfig(
-        temperature=params.temperature,
-        top_p=params.top_p,
-        max_output_tokens=params.max_tokens,
-        safety_settings=safety_settings,
-    )
-
-    parts: list[types.Part] = []
-    if system_instruction:
-        parts.append(types.Part(text=system_instruction))
-    parts.append(types.Part(text=contents))
-
+    config, parts = _build_call(params, contents, system_instruction)
     try:
         response = client.models.generate_content(
             model=_model_path(project_id, region, params.model_name),
@@ -66,13 +80,35 @@ def generate_text(
         )
     except Exception as e:  # noqa: BLE001 - surface any SDK/transport error uniformly
         raise UpstreamError(str(e)) from e
+    return _require_text(response.text)
 
-    text = response.text
-    if not text:
-        raise SafetyBlockedError(
-            "The model returned no content. It may have been blocked by safety filters."
+
+async def generate_text_async(
+    client: genai.Client,
+    *,
+    project_id: str,
+    region: str,
+    params: GenerationParams,
+    contents: str,
+    system_instruction: str | None = None,
+) -> str:
+    """Async counterpart of :func:`generate_text`.
+
+    Uses the client's async API (``client.aio``), which is safe to drive
+    concurrently from one event loop — unlike sharing the sync client across
+    threads, which races on its transport/auth context. This is what lets the
+    streaming endpoint run a tool's blocks in parallel on the shared client.
+    """
+    config, parts = _build_call(params, contents, system_instruction)
+    try:
+        response = await client.aio.models.generate_content(
+            model=_model_path(project_id, region, params.model_name),
+            contents=parts,
+            config=config,
         )
-    return text
+    except Exception as e:  # noqa: BLE001 - surface any SDK/transport error uniformly
+        raise UpstreamError(str(e)) from e
+    return _require_text(response.text)
 
 
 def default_params() -> GenerationParams:

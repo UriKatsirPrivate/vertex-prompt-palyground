@@ -21,6 +21,7 @@ TOOL_REGISTRY: dict[str, ToolSpec] = {
             handler=text_tools.fine_tune,
             placeholder="tweet about Israel",
             multi_result=True,
+            jobs=text_tools.fine_tune_jobs,
         ),
         ToolSpec(
             id="system_prompt",

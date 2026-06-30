@@ -14,7 +14,7 @@ from app.core.prompts.fine_tune_prompt import (
 from app.core.prompts.meta_prompt import metaprompt
 from app.core.prompts.system_prompts import NANO_BANANA_PROMPT, SYSTEM_PROMPT
 from app.core.prompts.video_prompt import video_prompt
-from app.core.tools.types import ResultBlock, ToolContext, ToolResult
+from app.core.tools.types import BlockJob, ResultBlock, ToolContext, ToolResult
 
 
 def _generate(ctx: ToolContext, contents: str, system_instruction: str | None = None) -> str:
@@ -28,28 +28,39 @@ def _generate(ctx: ToolContext, contents: str, system_instruction: str | None = 
     )
 
 
-def fine_tune(ctx: ToolContext) -> ToolResult:
-    """Four parallel improvements of the user's prompt (2x2 grid in the UI)."""
+def fine_tune_jobs(ctx: ToolContext) -> list[BlockJob]:
+    """The four prompt improvements as independent, streamable jobs.
+
+    Each job is one Gemini call described as data (the prompt). The streaming
+    endpoint runs them concurrently and emits each block as it lands; the sync
+    ``fine_tune`` handler runs the same jobs for the non-streaming path. Single-
+    sourced so the prompts and titles never drift between the two.
+    """
     task = "improve the prompt"
-    blocks = [
-        ResultBlock(
-            title="Make (v1)",
-            content=_generate(ctx, make_prompt.format(task=task, lazy_prompt=ctx.input)),
-        ),
-        ResultBlock(
-            title="Make (v2)",
-            content=_generate(ctx, make_prompt_v2.format(task=task, lazy_prompt=ctx.input)),
-        ),
-        ResultBlock(
-            title="Refine",
-            content=_generate(ctx, refine_prompt.format(task=task, lazy_prompt=ctx.input)),
-        ),
-        ResultBlock(
-            title="Improved",
-            content=_generate(ctx, prompt_improver.format(text=ctx.input)),
-        ),
+    return [
+        BlockJob("Make (v1)", make_prompt.format(task=task, lazy_prompt=ctx.input)),
+        BlockJob("Make (v2)", make_prompt_v2.format(task=task, lazy_prompt=ctx.input)),
+        BlockJob("Refine", refine_prompt.format(task=task, lazy_prompt=ctx.input)),
+        BlockJob("Improved", prompt_improver.format(text=ctx.input)),
     ]
-    return ToolResult(blocks=blocks)
+
+
+def fine_tune(ctx: ToolContext) -> ToolResult:
+    """Four improvements of the user's prompt (2x2 grid in the UI).
+
+    Runs the jobs sequentially for the plain ``/api/tools/fine_tune`` response;
+    the streaming endpoint runs the same jobs concurrently.
+    """
+    return ToolResult(
+        blocks=[
+            ResultBlock(
+                title=job.title,
+                content=_generate(ctx, job.contents, job.system_instruction),
+                language=job.language,
+            )
+            for job in fine_tune_jobs(ctx)
+        ]
+    )
 
 
 def system_prompt(ctx: ToolContext) -> ToolResult:
